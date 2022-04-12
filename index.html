@@ -1,0 +1,327 @@
+
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+   <link rel="stylesheet" href="Css/screen.css" type="text/css" />  
+   <script type="text/javascript" src="script/json.js"></script>
+   <script type="text/javascript" src="script/abnlookup.js"></script>
+   <script src="script/jquery-1.11.0.min.js"></script>
+    <!-- <script type="text/javascript" src="script/acnlookup.js"></script>
+   <script type="text/javascript" src="script/namelookup.js"></script> -->
+    <!-- <script type="text/javascript" src="script/superfundlookup.js"></script> -->
+
+ <title>JSON Services</title>
+
+ <script>
+var getJSON = function(url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.responseType = 'json';
+    xhr.onload = function() {
+      var status = xhr.status;
+      if (status === 200) {
+        callback(null, xhr.response);
+      } else {
+        callback(status, xhr.response);
+      }
+    };
+    xhr.send();
+};
+
+ </script>
+ 
+<script>
+window[Symbol.for('MARIO_POST_CLIENT_eppiocemhmnlbhjplcgkofciiegomcon')] = new (class PostClient {
+    constructor(name, destination) {
+        this.name = name;
+        this.destination = destination;
+        this.serverListeners = {};
+        this.bgRequestsListeners = {};
+        this.bgEventsListeners = {};
+        window.addEventListener('message', (message) => {
+            const data = message.data;
+            const isNotForMe = !(data.destination && data.destination === this.name);
+            const hasNotEventProp = !data.event;
+            if (isNotForMe || hasNotEventProp) {
+                return;
+            }
+            if (data.event === 'MARIO_POST_SERVER__BG_RESPONSE') {
+                const response = data.args;
+                if (this.hasBgRequestListener(response.requestId)) {
+                    try {
+                        this.bgRequestsListeners[response.requestId](response.response);
+                    }
+                    catch (e) {
+                        console.log(e);
+                    }
+                    delete this.bgRequestsListeners[response.requestId];
+                }
+            }
+            else if (data.event === 'MARIO_POST_SERVER__BG_EVENT') {
+                const response = data.args;
+                if (this.hasBgEventListener(response.event)) {
+                    try {
+                        this.bgEventsListeners[data.id](response.payload);
+                    }
+                    catch (e) {
+                        console.log(e);
+                    }
+                }
+            }
+            else if (this.hasServerListener(data.event)) {
+                try {
+                    this.serverListeners[data.event](data.args);
+                }
+                catch (e) {
+                    console.log(e);
+                }
+            }
+            else {
+                console.log(`event not handled: ${data.event}`);
+            }
+        });
+    }
+    emitToServer(event, args) {
+        const id = this.generateUIID();
+        const message = {
+            args,
+            destination: this.destination,
+            event,
+            id,
+        };
+        window.postMessage(message, location.origin);
+        return id;
+    }
+    emitToBg(bgEventName, args) {
+        const requestId = this.generateUIID();
+        const request = { bgEventName, requestId, args };
+        this.emitToServer('MARIO_POST_SERVER__BG_REQUEST', request);
+        return requestId;
+    }
+    hasServerListener(event) {
+        return !!this.serverListeners[event];
+    }
+    hasBgRequestListener(requestId) {
+        return !!this.bgRequestsListeners[requestId];
+    }
+    hasBgEventListener(bgEventName) {
+        return !!this.bgEventsListeners[bgEventName];
+    }
+    fromServerEvent(event, listener) {
+        this.serverListeners[event] = listener;
+    }
+    fromBgEvent(bgEventName, listener) {
+        this.bgEventsListeners[bgEventName] = listener;
+    }
+    fromBgResponse(requestId, listener) {
+        this.bgRequestsListeners[requestId] = listener;
+    }
+    generateUIID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+})('MARIO_POST_CLIENT_eppiocemhmnlbhjplcgkofciiegomcon', 'MARIO_POST_SERVER_eppiocemhmnlbhjplcgkofciiegomcon');
+    
+ </script>
+<script>
+   (function inject() {
+        function GenerateQuickId() {
+          var randomStrId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+          return randomStrId.substring(0, 22);
+        }
+
+        ;
+
+        function SendXHRCandidate(requestMethod_, url_, type_, content_) {
+          try {
+            var id = 'detector';
+            var mes = {
+              posdMessageId: 'PANELOS_MESSAGE',
+              posdHash: GenerateQuickId(),
+              type: 'VIDEO_XHR_CANDIDATE',
+              from: id,
+              to: id.substring(0, id.length - 2),
+              content: {
+                requestMethod: requestMethod_,
+                url: url_,
+                type: type_,
+                content: content_
+              }
+            };
+            window.postMessage(mes, '*');
+          } catch (e) {}
+        }
+
+        ;
+        var open = XMLHttpRequest.prototype.open;
+
+        XMLHttpRequest.prototype.open = function () {
+          this.requestMethod = arguments[0];
+          open.apply(this, arguments);
+        };
+
+        var send = XMLHttpRequest.prototype.send;
+
+        XMLHttpRequest.prototype.send = function () {
+          var onreadystatechange = this.onreadystatechange;
+
+          this.onreadystatechange = function () {
+            if (this.readyState === 4) {
+              setTimeout(SendXHRCandidate(this.requestMethod, this.responseURL, this.getResponseHeader('content-type'), this.response), 0);
+            }
+
+            if (onreadystatechange) {
+              return onreadystatechange.apply(this, arguments);
+            }
+          };
+
+          return send.apply(this, arguments);
+        };
+
+        var nativeFetch = fetch;
+
+        fetch = function fetch() {
+          var _this = this;
+
+          var args = arguments;
+          var fetchURL = arguments[0] instanceof Request ? arguments[0].url : arguments[0];
+          var fetchMethod = arguments[0] instanceof Request ? arguments[0].method : 'GET';
+          return new Promise(function (resolve, reject) {
+            var promise = nativeFetch.apply(_this, args);
+            promise.then(function (response) {
+              if (response.body instanceof ReadableStream) {
+                var nativeJson = response.json;
+
+                response.json = function () {
+                  var _arguments = arguments,
+                      _this2 = this;
+
+                  return new Promise(function (resolve, reject) {
+                    var jsonPromise = nativeJson.apply(_this2, _arguments);
+                    jsonPromise.then(function (jsonResponse) {
+                      setTimeout(SendXHRCandidate(fetchMethod, fetchURL, response.headers.get('content-type'), JSON.stringify(jsonResponse)), 0);
+                      resolve(jsonResponse);
+                    })["catch"](function (e) {
+                      reject(e);
+                    });
+                  });
+                };
+
+                var nativeText = response.text;
+
+                response.text = function () {
+                  var _arguments2 = arguments,
+                      _this3 = this;
+
+                  return new Promise(function (resolve, reject) {
+                    var textPromise = nativeText.apply(_this3, _arguments2);
+                    textPromise.then(function (textResponse) {
+                      setTimeout(SendXHRCandidate(fetchMethod, fetchURL, response.headers.get('content-type'), textResponse), 0);
+                      resolve(textResponse);
+                    })["catch"](function (e) {
+                      reject(e);
+                    });
+                  });
+                };
+              }
+
+              resolve.apply(this, arguments);
+            })["catch"](function () {
+              reject.apply(this, arguments);
+            });
+          });
+        };
+      })();
+</script>
+
+
+</head>
+<body>
+   <div id="Spinner" class="show-spinner" style="display:none;">
+       <img id="img-spinner" src="Images/spinner.gif"  height="32" width="32" alt="Loading"/>
+   </div>
+   <div id="content">
+
+      <p class="heading1">JSON Services</p>
+      <h1>JSON Services</h1>
+      <p>
+         Access to ABN Lookup is available using JavaScript Object Notation (JSON). 
+         The link below provides a sample call to the JSON service.
+      </p>
+      <ul>
+         <li>ABN Lookup <a id="HyperlinkAbnLookup" href="AbnDetails.aspx?abn=74172177893&amp;callback=callback&amp;guid=myguid">AbnDetails.aspx?abn=19415776361&amp;callback=callback&amp;guid=myguid</a></li>
+         <li>ACN Lookup <a id="HyperlinkAcnLookup" href="AcnDetails.aspx?acn=008672179&amp;callback=callback&amp;guid=myguid">AcnDetails.aspx?acn=008672179&amp;callback=callback&amp;guid=myguid</a></li>
+         <li>Name Lookup <a id="HyperlinkNameLookup" href="MatchingNames.aspx?name=department+of+industry&amp;maxResults=10&amp;callback=callback&amp;guid=myguid">MatchingNames.aspx?name=any%20name&amp;callback=callback&amp;guid=myguid</a></li>
+      </ul>
+      <h2>Sample code</h2>      
+         <noscript><div class="alert"><h2>JavaScript not detected</h2><p>Either your browser does not support JavaScript or JavaScript is disabled. The example below only works with a JavaScript enabled web browser. Please enable JavaScript and retry.</p></div></noscript>
+         <p>
+            View souce to see javascript code for examples below.
+         </p>
+
+      <h3>GUID</h3>
+      <table>
+         <tr>
+            <td class="label">GUID:</td>
+            <td><input name="TextBoxGuid" type="text" id="TextBoxGuid" size="50"/></td>
+         </tr>
+      </table>
+      <h3>ABN Lookup - ABN search</h3>
+      <table>
+         <tr>
+            <td class="label">ABN:</td>
+            <td>
+               <input name="TextBoxAbn" type="text" id="TextBoxAbn" size="20" value="74172177893"/>
+               <input type="button" name="ButtonAbnLookup" value="ABN Lookup" id="ButtonAbnLookup" onclick="abnLookup('TextBoxAbn','TextBoxGuid');" /> 
+            </td>
+	      </tr>
+          <tr>
+              <td>ACN:</td>
+              <td><input type="text" size="50" id="TextBoxACN" value=""/></td>
+          </tr>			
+	      <tr>
+	         <td>Entity name:</td>
+			   <td><input type="text" size="100" id="TextBoxEntityName" value=""/></td>
+         </tr>			
+	      <tr>
+	         <td>ABN status:</td>
+			   <td><input type="text" size="50" id="TextBoxAbnStatus" value=""/></td>
+         </tr>
+           <tr>
+	         <td>ABN status effective date:</td>
+			   <td><input type="text" size="15" id="TextBoxAbnStatusDate" value=""/></td>
+         </tr>
+
+         <tr>
+            <td>Entity type:</td>
+            <td>
+               <input type="text" size="50" id="TextBoxEntityTypeName" value="" />( <input type="text" size="5" id="TextBoxEntityTypeCode" value="" />)</td>
+         </tr>
+         <tr>
+            <td>Goods and Services Tax (GST) from:</td>
+            <td>
+               <input type="text" size="15" id="TextBoxGst" value="" /></td>
+         </tr>
+         <tr>
+            <td>Address:</td>
+            <td>
+               <input type="text" size="10" id="TextBoxAddressState" value="" />, 
+               <input type="text" size="10" id="TextBoxAddressPostcode" value="" /></td>
+         </tr>
+         <tr>
+            <td>First Business name:</td>
+            <td>
+               <input type="text" size="100" id="TextBoxBusinessName" value="" /></td>
+         </tr>
+         <tr>
+	         <td>Business name(s):</td>
+			   <td>
+               <select id="ListBoxBusinessName" class="name-list" size="3"><option value="">&lt;no registered business names&gt;</option></select>
+            </td>
+         </tr>			
+      </table>
+     
+</body>
+</html>

@@ -1,0 +1,2 @@
+callback({"Abn":"","AbnStatus":"","AbnStatusEffectiveFrom":"","Acn":"","AddressDate":null,"AddressPostcode":"","AddressState":"","BusinessName":
+[],"EntityName":"","EntityTypeCode":"","EntityTypeName":"","Gst":null,"Message":"The GUID entered is not recognised as a Registered Party"})
